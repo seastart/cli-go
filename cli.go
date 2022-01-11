@@ -112,10 +112,12 @@ func (app *CliApp) GetCommand(name string) *Command {
 }
 
 // 解析并运行
-func (app *CliApp) Run() {
+func (app *CliApp) Run(args ...string) {
 	// 不用默认的parse，自己用os args自动区分有没有command的情况
 	// flag.Parse()
-	args := os.Args[1:]
+	if len(args) == 0 {
+		args = os.Args[1:]
+	}
 	// 第一个是command
 	// 如果没有指定命令，有默认命令展示默认命令，否则显示帮助并退出
 	// 如果没有注册对应命令，展示错误并退出
@@ -148,6 +150,11 @@ func (app *CliApp) Run() {
 	cmd.fs.Parse(args)
 	// 运行响应
 	cmd.Handler(cmd.fs.Args(), cmd.options)
+	// 第一个是空command用于设置全局参数，后面再运行其他命令
+	// ./main -env=prod start
+	if mainCommand == "" && cmd.fs.NArg() > 0 {
+		app.Run(cmd.fs.Args()...)
+	}
 }
 
 // 展示全部帮助并退出
