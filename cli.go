@@ -67,7 +67,7 @@ func NewCliApp(desc string) *CliApp {
 	return app
 }
 
-// 创建一个command，可传递name为空表示整个程序就是一个command
+// 创建一个command，name为空表示整个程序就是一个command，handler里subcmds代表子命令(非-开头)，options为解析后的参数(-开头)
 func (app *CliApp) AddCommand(name string, usage string, handler func(subcmds []string, options map[string]*Option), opts ...*Option) *Command {
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
 	fs.Usage = func() {
@@ -152,7 +152,8 @@ func (app *CliApp) Run(args ...string) {
 	cmd.Handler(cmd.fs.Args(), cmd.options)
 	// 第一个是空command用于设置全局参数，后面再运行其他命令
 	// ./main -env=prod start
-	if mainCommand == "" && cmd.fs.NArg() > 0 {
+	// 修复 ./main - 会死循环
+	if mainCommand == "" && cmd.fs.NArg() > 0 && cmd.fs.Args()[0] != "-" {
 		app.Run(cmd.fs.Args()...)
 	}
 }
