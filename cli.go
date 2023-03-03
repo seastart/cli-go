@@ -175,8 +175,32 @@ func (app *CliApp) showAllHelpAndExit() {
 	os.Exit(2)
 }
 
-// 展示错误并退出
-func (app *CliApp) Failf(format string, info ...interface{}) {
+// 以状态码code(0代表成功)退出并展示信息
+func (app *CliApp) Exitf(code int, format string, info ...interface{}) {
+	if code == 0 {
+		app.Successf(format, info...)
+	} else {
+		app.Errorf(format, info...)
+	}
+	os.Exit(code)
+}
+
+// 展示错误信息到stderr
+func (app *CliApp) Errorf(format string, info ...interface{}) {
 	color.New(color.FgRed).Fprintf(os.Stderr, format+"\n", info...)
-	os.Exit(3)
+}
+
+// 展示成功信息到stdout
+func (app *CliApp) Successf(format string, info ...interface{}) {
+	color.New(color.FgGreen).Fprintf(os.Stdout, format+"\n", info...)
+}
+
+// 展示告警信息到stdout
+func (app *CliApp) Warningf(format string, info ...interface{}) {
+	color.New(color.FgYellow).Fprintf(os.Stdout, format+"\n", info...)
+}
+
+// 展示提示信息到stdout
+func (app *CliApp) Infof(format string, info ...interface{}) {
+	color.New(color.FgWhite).Fprintf(os.Stdout, format+"\n", info...)
 }

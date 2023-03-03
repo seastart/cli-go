@@ -11,7 +11,7 @@ func main() {
 	// test command with subcommand
 	app.AddCommand("test", "test command with subcommand", func(subcmds []string, options map[string]*cli.Option) {
 		if len(subcmds) == 0 {
-			app.Failf("need specify subcommand: test who?")
+			app.Exitf(1, "need specify subcommand: test who?")
 		}
 		fmt.Printf("into test command subcmds=%v start=%v\n", subcmds, options["start"].GetVal())
 	}, &cli.Option{

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/seastart/cli-go"
 )
 
@@ -11,7 +9,11 @@ func main() {
 	app := cli.NewCliApp("app desc")
 	// "" means the main app is one command
 	app.AddCommand("", "default command", func(subcmds []string, options map[string]*cli.Option) {
-		fmt.Printf("into default command start=%v\n", options["start"].GetVal())
+		app.Infof("into default command start=%v\n", options["start"].GetVal())
+		app.Warningf("into default command start=%v\n", options["start"].GetVal())
+		app.Successf("into default command start=%v\n", options["start"].GetVal())
+		app.Errorf("into default command start=%v\n", options["start"].GetVal())
+		app.Exitf(0, "into default command start=%v\n", options["start"].GetVal())
 	}, &cli.Option{
 		Name:  "start",
 		Dft:   0,
