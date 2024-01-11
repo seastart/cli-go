@@ -8,19 +8,24 @@ import (
 
 func main() {
 
-	app := cli.NewCliApp("app desc")
-	// set common options start
-	app.AddCommand("", "default command", func(subcmds []string, options map[string]*cli.Option) {
-		fmt.Printf("into default command env=%v\n", options["env"].GetVal())
-	}, &cli.Option{
+	app := cli.NewCliApp("app desc", &cli.Option{
 		Name:  "env",
 		Dft:   "dev",
 		Usage: "envirioment",
 	})
 	// list
-	app.AddCommand("list", "list command", func(subcmds []string, options map[string]*cli.Option) {
-		fmt.Printf("into list command page=%v\n", options["page"].GetVal())
-
+	app.AddCommand("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
+		env, err := cmd.App().OptVal("env")
+		if err != nil {
+			return
+		}
+		page, err := cmd.OptVal("page")
+		if err != nil {
+			return
+		}
+		fmt.Printf("app env=%v\n", env)
+		fmt.Printf("into list command page=%v\n", page)
+		return
 	}, &cli.Option{
 		Name:  "page",
 		Dft:   1,

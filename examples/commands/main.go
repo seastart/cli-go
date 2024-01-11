@@ -9,18 +9,26 @@ import (
 func main() {
 	app := cli.NewCliApp("app desc")
 	// test command
-	app.AddCommand("test", "test command", func(subcmds []string, options map[string]*cli.Option) {
-		fmt.Printf("into test command start=%v\n", options["start"].GetVal())
-
+	app.AddCommand("test", "test command", func(cmd *cli.Command, remaincmds []string) (err error) {
+		start, err := cmd.OptVal("start")
+		if err != nil {
+			return
+		}
+		fmt.Printf("into test command start=%v\n", start)
+		return
 	}, &cli.Option{
 		Name:  "start",
 		Dft:   0,
 		Usage: "begin no",
 	})
 	// list command
-	app.AddCommand("list", "list command", func(subcmds []string, options map[string]*cli.Option) {
-		fmt.Printf("into list command page=%v\n", options["page"].GetVal())
-
+	app.AddCommand("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
+		page, err := cmd.OptVal("page")
+		if err != nil {
+			return
+		}
+		fmt.Printf("into list command page=%v\n", page)
+		return
 	}, &cli.Option{
 		Name:  "page",
 		Dft:   1,

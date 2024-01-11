@@ -19,17 +19,26 @@ import (
 
 // app
 type CliApp struct {
-	Desc     string              // 描述
-	commands map[string]*Command // 子命令
+	*Command // the self root command
 }
+
+// 成功执行
+const CODE_SUCCESS = 0
+const CODE_ERROR_COMMON = 100
+
+// command执行
+type Handler func(cmd *Command, remaincmds []string) (err error)
 
 // command
 type Command struct {
-	Name    string             // 命令名
-	Usage   string             // 命令说明
+	name    string             // 命令名
+	desc    string             // 命令说明
 	options map[string]*Option // 子参数
 	fs      *flag.FlagSet
-	Handler func(subcmds []string, options map[string]*Option) // command的响应
+	handler Handler             // command handler
+	cmds    map[string]*Command // sub commands
+	pcmd    *Command            // parent command
+	app     *CliApp             // app
 }
 
 // option
@@ -45,38 +54,60 @@ func (opt *Option) GetVal() reflect.Value {
 	return reflect.ValueOf(opt.val).Elem()
 }
 
-// 实例化一个描述为desc的cli app
-func NewCliApp(desc string) *CliApp {
+// 实例化一个描述为desc，根参数为opts的cli app
+func NewCliApp(desc string, opts ...*Option) *CliApp {
+	return NewCliWholeApp(desc, nil, opts...)
+}
+
+// 实例化一个描述为desc，根参数为opts，且没有子命令的cli app
+func NewCliWholeApp(desc string, handler Handler, opts ...*Option) *CliApp {
 	app := &CliApp{
-		Desc:     desc,
-		commands: map[string]*Command{},
+		Command: newCommand(nil, nil, "", desc, handler, opts...),
 	}
-	app.AddCommand("help", "help [subcommand] 查看子命令帮助或全部帮助", func(subcmds []string, options map[string]*Option) {
-		if len(subcmds) > 0 {
-			for _, subcmd := range subcmds {
-				if cmd := app.commands[subcmd]; cmd == nil {
-					fmt.Fprintf(os.Stderr, "%s子命令不存在\n", subcmd)
-				} else {
-					cmd.fs.Usage()
-				}
+	app.Command.app = app
+	app.AddCommand("help", "help [subcommand] 查看子命令帮助或全部帮助", func(cmd *Command, remaincmds []string) (err error) {
+		// 从rootcmd开始朝招
+		tcmd := app.Command
+		// 遍历展示子命令的具体帮助
+		for _, remaincmd := range remaincmds {
+			if subcmd, exists := tcmd.cmds[remaincmd]; !exists {
+				app.Warningf("%s不存在子命令%s", tcmd.name, remaincmd)
+				break
+			} else {
+				tcmd = subcmd
 			}
-		} else {
-			app.showAllHelpAndExit()
 		}
+		tcmd.showHelp()
+		return
 	})
 	return app
 }
 
-// 创建一个command，name为空表示整个程序就是一个command，handler里subcmds代表子命令(非-开头)，options为解析后的参数(-开头)
-func (app *CliApp) AddCommand(name string, usage string, handler func(subcmds []string, options map[string]*Option), opts ...*Option) *Command {
-	fs := flag.NewFlagSet(name, flag.ExitOnError)
-	fs.Usage = func() {
-		// 第一行command的usage，剩下的是options
-		color.New(color.FgGreen).Fprintf(os.Stderr, "%s:\t", name)
-		fmt.Fprintln(os.Stderr, usage)
-		fs.PrintDefaults()
-		fmt.Fprintln(os.Stderr, "")
+// 解析并运行
+func (app *CliApp) Run(args ...string) (err error) {
+	// 不用默认的parse，自己用os args自动区分有没有command的情况
+	if len(args) == 0 {
+		args = os.Args[1:]
 	}
+	// 从rootcmd开始parse
+	cmd := app.Command
+	err = cmd.run(args...)
+
+	code := CODE_SUCCESS
+	if err != nil {
+		code = CODE_ERROR_COMMON
+	}
+	if code != CODE_SUCCESS {
+		app.Errorf("执行错误:%v", err)
+	} else {
+		// app.Successf("执行成功")
+	}
+	return
+}
+
+// 内部new command
+func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Handler, opts ...*Option) *Command {
+	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	options := map[string]*Option{}
 	for _, opt := range opts {
 		options[opt.Name] = opt
@@ -95,74 +126,107 @@ func (app *CliApp) AddCommand(name string, usage string, handler func(subcmds []
 			panic("目前仅支持bool int string三种option类型")
 		}
 	}
-	cmd := &Command{
-		Name:    name,
-		Usage:   usage,
+	subcmd := &Command{
+		name:    name,
+		desc:    desc,
 		options: options,
 		fs:      fs,
-		Handler: handler,
+		handler: handler,
+		cmds:    map[string]*Command{},
+		pcmd:    pcmd,
+		app:     app,
 	}
-	app.commands[name] = cmd
-	return cmd
-}
-
-// 获取command
-func (app *CliApp) GetCommand(name string) *Command {
-	return app.commands[name]
-}
-
-// 解析并运行
-func (app *CliApp) Run(args ...string) {
-	// 不用默认的parse，自己用os args自动区分有没有command的情况
-	// flag.Parse()
-	if len(args) == 0 {
-		args = os.Args[1:]
-	}
-	// 第一个是command
-	// 如果没有指定命令，有默认命令展示默认命令，否则显示帮助并退出
-	// 如果没有注册对应命令，展示错误并退出
-	mainCommand := ""
-	// 没有command或者第一个arg不是参数
-	if len(args) > 0 && strings.IndexRune(args[0], '-') != 0 {
-		mainCommand = args[0]
-		// 剩余的命令行参数
-		args = args[1:]
-	}
-	cmd := app.commands[mainCommand]
-	if cmd == nil {
-		if mainCommand != "" {
-			fmt.Fprintf(os.Stderr, "未注册%s命令\n", mainCommand)
+	// 如果command自身没有响应，加上默认显示帮助的响应
+	if handler == nil {
+		subcmd.handler = func(cmd *Command, remaincmds []string) (err error) {
+			subcmd.showHelp()
+			return
 		}
-		app.showAllHelpAndExit()
 	}
-	// // 解析
-	// err := cmd.fs.Parse(args)
-	// if err == flag.ErrHelp {
-	// 	cmd.fs.Usage()
-	// } else if err != nil {
-	// 	app.Failf("错误: %s", err.Error())
-	// 	cmd.fs.Usage()
-	// } else {
-	// 	// 运行响应
-	// 	cmd.Handler(cmd.fs.Args())
-	// }
-	// flag设置了exitonerror，会自动打印
-	cmd.fs.Parse(args)
-	// 运行响应
-	cmd.Handler(cmd.fs.Args(), cmd.options)
-	// 第一个是空command用于设置全局参数，后面再运行其他命令
-	// ./main -env=prod start
-	// 修复 ./main - 会死循环
-	if mainCommand == "" && cmd.fs.NArg() > 0 && cmd.fs.Args()[0] != "-" {
-		app.Run(cmd.fs.Args()...)
+	fs.Usage = subcmd.fsusage
+	if pcmd != nil {
+		pcmd.cmds[name] = subcmd
 	}
+	return subcmd
 }
 
-// 展示全部帮助并退出
-func (app *CliApp) showAllHelpAndExit() {
-	color.New().Fprintln(os.Stderr, app.Desc+"\n")
+// 创建一个command，handler里options为解析后的参数(-开头)
+func (cmd *Command) AddCommand(name string, usage string, handler Handler, opts ...*Option) *Command {
+	return newCommand(cmd.app, cmd, name, usage, handler, opts...)
+}
+
+// 重写fs的usage
+func (cmd *Command) fsusage() {
+	cmd.usage(true)
+}
+
+func (cmd *Command) usage(showname bool) {
+	// 第一行command的name:desc，剩下的是options
+	if showname && cmd.name != "" {
+		color.New(color.FgGreen).Fprintf(os.Stderr, "%s: ", cmd.name)
+	}
+	fmt.Fprintln(os.Stderr, cmd.desc)
+	cmd.fs.PrintDefaults()
+	fmt.Fprintln(os.Stderr, "")
+}
+
+// 获取子command
+func (cmd *Command) SubCommand(name string) *Command {
+	return cmd.cmds[name]
+}
+
+// 获取父command
+func (cmd *Command) ParentCommand() *Command {
+	return cmd.pcmd
+}
+
+// 获取app
+func (cmd *Command) App() *CliApp {
+	return cmd.app
+}
+
+// 获取option值
+func (cmd *Command) OptVal(name string) (val reflect.Value, err error) {
+	if opt, ok := cmd.options[name]; ok {
+		return opt.GetVal(), nil
+	} else {
+		err = fmt.Errorf("%s不存在参数%s", cmd.name, name)
+	}
+	return
+}
+
+// 更新 desc
+func (cmd *Command) SetDesc(desc string) {
+	cmd.desc = desc
+}
+
+// 运行command
+func (cmd *Command) run(args ...string) (err error) {
+	err = cmd.fs.Parse(args)
+	if err != nil {
+		return
+	}
+	// 有子cmd并且存在，遍历执行；否则执行自身
+	if len(cmd.fs.Args()) > 0 {
+		subcmdname := cmd.fs.Args()[0]
+		subargs := cmd.fs.Args()[1:]
+		if subcmd, exists := cmd.cmds[subcmdname]; exists {
+			cmd = subcmd
+			return cmd.run(subargs...)
+		} else {
+			// cmd.app.Warningf("%s不存在子命令%s", cmd.name, subcmdname)
+		}
+	}
+	// 执行自身
+	return cmd.handler(cmd, cmd.fs.Args())
+}
+
+// 展示帮助
+func (cmd *Command) showHelp() {
+	// 不显示自己的name
+	cmd.usage(false)
 	var keys []string
-	for k := range app.commands {
+	for k := range cmd.cmds {
 		keys = append(keys, k)
 	}
 	// 默认排序区分了大小写
@@ -170,9 +234,8 @@ func (app *CliApp) showAllHelpAndExit() {
 	sort.Slice(keys, func(i, j int) bool { return strings.ToLower(keys[i]) < strings.ToLower(keys[j]) })
 	// 打印子command的help
 	for _, key := range keys {
-		app.commands[key].fs.Usage()
+		cmd.cmds[key].fs.Usage()
 	}
-	os.Exit(2)
 }
 
 // 以状态码code(0代表成功)退出并展示信息
