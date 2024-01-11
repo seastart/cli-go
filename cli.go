@@ -70,6 +70,11 @@ func NewCliWholeApp(desc string, handler Handler, opts ...*Option) *CliApp {
 		tcmd := app.Command
 		// 遍历展示子命令的具体帮助
 		for _, remaincmd := range remaincmds {
+			// help过滤参数
+			// ./cli help live -env=qa start
+			if remaincmd[:1] == "-" {
+				continue
+			}
 			if subcmd, exists := tcmd.cmds[remaincmd]; !exists {
 				app.Warningf("%s不存在子命令%s", tcmd.name, remaincmd)
 				break
@@ -77,7 +82,7 @@ func NewCliWholeApp(desc string, handler Handler, opts ...*Option) *CliApp {
 				tcmd = subcmd
 			}
 		}
-		tcmd.showHelp()
+		tcmd.ShowHelp()
 		return
 	})
 	return app
@@ -139,7 +144,7 @@ func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Ha
 	// 如果command自身没有响应，加上默认显示帮助的响应
 	if handler == nil {
 		subcmd.handler = func(cmd *Command, remaincmds []string) (err error) {
-			subcmd.showHelp()
+			subcmd.ShowHelp()
 			return
 		}
 	}
@@ -201,11 +206,6 @@ func (cmd *Command) OptValE(name string) (val reflect.Value, err error) {
 	return
 }
 
-// 更新 desc
-func (cmd *Command) SetDesc(desc string) {
-	cmd.desc = desc
-}
-
 // 运行command
 func (cmd *Command) run(args ...string) (err error) {
 	err = cmd.fs.Parse(args)
@@ -228,7 +228,7 @@ func (cmd *Command) run(args ...string) (err error) {
 }
 
 // 展示帮助
-func (cmd *Command) showHelp() {
+func (cmd *Command) ShowHelp() {
 	// 不显示自己的name
 	cmd.usage(false)
 	var keys []string
