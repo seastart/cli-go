@@ -17,9 +17,9 @@ func main() {
 		fmt.Printf("into test command start=%v\n", start)
 		return
 	}, &cli.Option{
-		Name:  "start",
-		Dft:   0,
-		Usage: "begin no",
+		Name: "start",
+		Dft:  0,
+		Desc: "begin no",
 	})
 	// list command
 	app.AddCommand("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
@@ -30,9 +30,9 @@ func main() {
 		fmt.Printf("into list command page=%v\n", page)
 		return
 	}, &cli.Option{
-		Name:  "page",
-		Dft:   1,
-		Usage: "page no",
+		Name: "page",
+		Dft:  1,
+		Desc: "page no",
 	})
 	app.Run()
 	// ./main

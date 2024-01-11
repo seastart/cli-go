@@ -18,9 +18,9 @@ func main() {
 		cmd.App().Exitf(0, "into default command start=%v\n", start)
 		return
 	}, &cli.Option{
-		Name:  "start",
-		Dft:   0,
-		Usage: "begin no",
+		Name: "start",
+		Dft:  0,
+		Desc: "begin no",
 	})
 	app.Run()
 	// ./main

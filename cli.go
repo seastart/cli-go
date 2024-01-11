@@ -43,10 +43,10 @@ type Command struct {
 
 // option
 type Option struct {
-	Name  string      // 参数名
-	Dft   interface{} // 参数默认值
-	Usage string      // 参数说明
-	val   interface{} // 参数解析出的值
+	Name string      // 参数名
+	Dft  interface{} // 参数默认值
+	Desc string      // 参数说明
+	val  interface{} // 参数解析出的值
 }
 
 // 获取解析出的值
@@ -115,13 +115,13 @@ func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Ha
 		switch val := opt.val.(type) {
 		case bool:
 			opt.val = &val
-			fs.BoolVar(&val, opt.Name, val, opt.Usage)
+			fs.BoolVar(&val, opt.Name, val, opt.Desc)
 		case int:
 			opt.val = &val
-			fs.IntVar(&val, opt.Name, val, opt.Usage)
+			fs.IntVar(&val, opt.Name, val, opt.Desc)
 		case string:
 			opt.val = &val
-			fs.StringVar(&val, opt.Name, val, opt.Usage)
+			fs.StringVar(&val, opt.Name, val, opt.Desc)
 		default:
 			panic("目前仅支持bool int string三种option类型")
 		}
