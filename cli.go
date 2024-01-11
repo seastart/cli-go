@@ -151,8 +151,8 @@ func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Ha
 }
 
 // 创建一个command，handler里options为解析后的参数(-开头)
-func (cmd *Command) AddCommand(name string, usage string, handler Handler, opts ...*Option) *Command {
-	return newCommand(cmd.app, cmd, name, usage, handler, opts...)
+func (cmd *Command) AddCommand(name string, desc string, handler Handler, opts ...*Option) *Command {
+	return newCommand(cmd.app, cmd, name, desc, handler, opts...)
 }
 
 // 重写fs的usage
@@ -186,7 +186,13 @@ func (cmd *Command) App() *CliApp {
 }
 
 // 获取option值
-func (cmd *Command) OptVal(name string) (val reflect.Value, err error) {
+func (cmd *Command) OptVal(name string) (val reflect.Value) {
+	val, _ = cmd.OptValE(name)
+	return
+}
+
+// 获取option值
+func (cmd *Command) OptValE(name string) (val reflect.Value, err error) {
 	if opt, ok := cmd.options[name]; ok {
 		return opt.GetVal(), nil
 	} else {

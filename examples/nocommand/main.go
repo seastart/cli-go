@@ -7,10 +7,7 @@ import (
 func main() {
 	// "" means the main app is one command
 	app := cli.NewCliWholeApp("app desc", func(cmd *cli.Command, remaincmds []string) (err error) {
-		start, err := cmd.OptVal("start")
-		if err != nil {
-			return
-		}
+		start := cmd.OptVal("start")
 		cmd.App().Infof("into default command start=%v\n", start)
 		cmd.App().Warningf("into default command start=%v\n", start)
 		cmd.App().Successf("into default command start=%v\n", start)

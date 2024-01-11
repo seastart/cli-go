@@ -10,10 +10,7 @@ func main() {
 	app := cli.NewCliApp("app desc")
 	// test command
 	app.AddCommand("test", "test command", func(cmd *cli.Command, remaincmds []string) (err error) {
-		start, err := cmd.OptVal("start")
-		if err != nil {
-			return
-		}
+		start := cmd.OptVal("start")
 		fmt.Printf("into test command start=%v\n", start)
 		return
 	}, &cli.Option{
@@ -23,10 +20,7 @@ func main() {
 	})
 	// list command
 	app.AddCommand("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
-		page, err := cmd.OptVal("page")
-		if err != nil {
-			return
-		}
+		page := cmd.OptVal("page")
 		fmt.Printf("into list command page=%v\n", page)
 		return
 	}, &cli.Option{

@@ -15,14 +15,8 @@ func main() {
 	})
 	// list
 	app.AddCommand("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
-		env, err := cmd.App().OptVal("env")
-		if err != nil {
-			return
-		}
-		page, err := cmd.OptVal("page")
-		if err != nil {
-			return
-		}
+		env := cmd.App().OptVal("env")
+		page := cmd.OptVal("page")
 		fmt.Printf("app env=%v\n", env)
 		fmt.Printf("into list command page=%v\n", page)
 		return

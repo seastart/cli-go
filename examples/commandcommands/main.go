@@ -15,14 +15,8 @@ func main() {
 		Desc: "begin no",
 	})
 	testCmd.AddCommand("live", "test subcommand", func(cmd *cli.Command, remaincmds []string) (err error) {
-		start, err := cmd.ParentCommand().OptVal("start")
-		if err != nil {
-			return
-		}
-		id, err := cmd.OptVal("id")
-		if err != nil {
-			return
-		}
+		start := cmd.ParentCommand().OptVal("start")
+		id := cmd.OptVal("id")
 		fmt.Printf("into live subcommand parent start=%v\n", start)
 		fmt.Printf("into live subcommand id=%v\n", id)
 		return
