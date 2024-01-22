@@ -9,12 +9,12 @@ import (
 func main() {
 	app := cli.NewCliApp("app desc")
 	// test command with subcommand
-	testCmd := app.AddCommand("test", "test command with subcommand", nil, &cli.Option{
+	testCmd := app.AddCommandN("test", "test command with subcommand", nil, &cli.Option{
 		Name: "start",
 		Dft:  0,
 		Desc: "begin no",
 	})
-	subCmd := testCmd.AddCommand("live", "test subcommand", func(cmd *cli.Command, remaincmds []string) (err error) {
+	subCmd := testCmd.AddCommandN("live", "test subcommand", func(cmd *cli.Command, remaincmds []string) (err error) {
 		id := cmd.OptVal("id")
 		fmt.Printf("into live subcommand run id=%v\n", id)
 		return

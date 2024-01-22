@@ -4,6 +4,7 @@ a simple library to build golang command line (cli / cmd)apps
 ```
 go get github.com/seastart/cli-go
 ```
+respect [cobra](https://cobra.dev/)  
 
 ## concepts
 ```
@@ -54,3 +55,4 @@ each app have a default help command
 
 ## TODO
 - support i18n
+- support persistentRun

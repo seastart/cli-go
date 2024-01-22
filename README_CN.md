@@ -3,6 +3,7 @@
 ```
 go get github.com/seastart/cli-go
 ```
+致敬 [cobra](https://cobra.dev/)  
 
 ## 概念
 ```
@@ -54,3 +55,4 @@ go get github.com/seastart/cli-go
 
 ## TODO
 - support i18n
+- support persistentRun

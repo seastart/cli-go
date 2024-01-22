@@ -14,7 +14,7 @@ func main() {
 		Desc: "envirioment",
 	})
 	// list
-	app.AddCommand("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
+	app.AddCommandN("list", "list command", func(cmd *cli.Command, remaincmds []string) (err error) {
 		env := cmd.App().OptVal("env")
 		page := cmd.OptVal("page")
 		fmt.Printf("app env=%v\n", env)

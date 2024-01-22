@@ -66,7 +66,7 @@ func NewCliWholeApp(desc string, handler Handler, opts ...*Option) *CliApp {
 		Command: NewCommand("", desc, handler, opts...),
 	}
 	app.Command.app = app
-	app.AddCommand("help", "help [subcommand] 查看子命令帮助或全部帮助", func(cmd *Command, remaincmds []string) (err error) {
+	app.AddCommandN("help", "help [subcommand] 查看子命令帮助或全部帮助", func(cmd *Command, remaincmds []string) (err error) {
 		// 从rootcmd开始朝招
 		tcmd := app.Command
 		// 遍历展示子命令的具体帮助
@@ -156,12 +156,17 @@ func (cmd *Command) SetPreRun(handler Handler) {
 	cmd.pre = handler
 }
 
-// 创建并返回一个子command，handler里options为解析后的参数(-开头)
-func (cmd *Command) AddCommand(name string, desc string, handler Handler, opts ...*Option) *Command {
-	subcmd := NewCommand(name, desc, handler, opts...)
+// 添加一个子command
+func (cmd *Command) AddCommand(subcmd *Command) {
 	subcmd.pcmd = cmd
 	subcmd.app = cmd.app
-	cmd.cmds[name] = subcmd
+	cmd.cmds[subcmd.name] = subcmd
+}
+
+// 创建并返回一个子command，handler里options为解析后的参数(-开头)
+func (cmd *Command) AddCommandN(name string, desc string, handler Handler, opts ...*Option) *Command {
+	subcmd := NewCommand(name, desc, handler, opts...)
+	cmd.AddCommand(subcmd)
 	return subcmd
 }
 
