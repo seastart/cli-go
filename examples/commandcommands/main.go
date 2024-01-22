@@ -14,16 +14,19 @@ func main() {
 		Dft:  0,
 		Desc: "begin no",
 	})
-	testCmd.AddCommand("live", "test subcommand", func(cmd *cli.Command, remaincmds []string) (err error) {
-		start := cmd.ParentCommand().OptVal("start")
+	subCmd := testCmd.AddCommand("live", "test subcommand", func(cmd *cli.Command, remaincmds []string) (err error) {
 		id := cmd.OptVal("id")
-		fmt.Printf("into live subcommand parent start=%v\n", start)
-		fmt.Printf("into live subcommand id=%v\n", id)
+		fmt.Printf("into live subcommand run id=%v\n", id)
 		return
 	}, &cli.Option{
 		Name: "id",
 		Dft:  0,
 		Desc: "live id",
+	})
+	subCmd.SetPreRun(func(cmd *cli.Command, remaincmds []string) (err error) {
+		start := cmd.ParentCommand().OptVal("start")
+		fmt.Printf("into live subcommand prerun start=%v\n", start)
+		return
 	})
 	app.Run()
 	// ./main

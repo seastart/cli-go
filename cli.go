@@ -35,6 +35,7 @@ type Command struct {
 	desc    string             // 命令说明
 	options map[string]*Option // 子参数
 	fs      *flag.FlagSet
+	pre     Handler             // before run
 	handler Handler             // command handler
 	cmds    map[string]*Command // sub commands
 	pcmd    *Command            // parent command
@@ -62,7 +63,7 @@ func NewCliApp(desc string, opts ...*Option) *CliApp {
 // 实例化一个描述为desc，根参数为opts，且没有子命令的cli app
 func NewCliWholeApp(desc string, handler Handler, opts ...*Option) *CliApp {
 	app := &CliApp{
-		Command: newCommand(nil, nil, "", desc, handler, opts...),
+		Command: NewCommand("", desc, handler, opts...),
 	}
 	app.Command.app = app
 	app.AddCommand("help", "help [subcommand] 查看子命令帮助或全部帮助", func(cmd *Command, remaincmds []string) (err error) {
@@ -110,8 +111,8 @@ func (app *CliApp) Run(args ...string) (err error) {
 	return
 }
 
-// 内部new command
-func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Handler, opts ...*Option) *Command {
+// 常见一个command
+func NewCommand(name string, desc string, handler Handler, opts ...*Option) *Command {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	options := map[string]*Option{}
 	for _, opt := range opts {
@@ -138,8 +139,6 @@ func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Ha
 		fs:      fs,
 		handler: handler,
 		cmds:    map[string]*Command{},
-		pcmd:    pcmd,
-		app:     app,
 	}
 	// 如果command自身没有响应，加上默认显示帮助的响应
 	if handler == nil {
@@ -149,15 +148,21 @@ func newCommand(app *CliApp, pcmd *Command, name string, desc string, handler Ha
 		}
 	}
 	fs.Usage = subcmd.fsusage
-	if pcmd != nil {
-		pcmd.cmds[name] = subcmd
-	}
 	return subcmd
 }
 
-// 创建一个command，handler里options为解析后的参数(-开头)
+// 设置执行前执行
+func (cmd *Command) SetPreRun(handler Handler) {
+	cmd.pre = handler
+}
+
+// 创建并返回一个子command，handler里options为解析后的参数(-开头)
 func (cmd *Command) AddCommand(name string, desc string, handler Handler, opts ...*Option) *Command {
-	return newCommand(cmd.app, cmd, name, desc, handler, opts...)
+	subcmd := NewCommand(name, desc, handler, opts...)
+	subcmd.pcmd = cmd
+	subcmd.app = cmd.app
+	cmd.cmds[name] = subcmd
+	return subcmd
 }
 
 // 重写fs的usage
@@ -221,6 +226,13 @@ func (cmd *Command) run(args ...string) (err error) {
 			return cmd.run(subargs...)
 		} else {
 			// cmd.app.Warningf("%s不存在子命令%s", cmd.name, subcmdname)
+		}
+	}
+	// pre
+	if cmd.pre != nil {
+		err = cmd.pre(cmd, cmd.fs.Args())
+		if err != nil {
+			return
 		}
 	}
 	// 执行自身
