@@ -156,11 +156,13 @@ func (cmd *Command) SetPreRun(handler Handler) {
 	cmd.pre = handler
 }
 
-// 添加一个子command
-func (cmd *Command) AddCommand(subcmd *Command) {
-	subcmd.pcmd = cmd
-	subcmd.app = cmd.app
-	cmd.cmds[subcmd.name] = subcmd
+// 添加子command
+func (cmd *Command) AddCommand(subcmds ...*Command) {
+	for _, subcmd := range subcmds {
+		subcmd.pcmd = cmd
+		subcmd.app = cmd.app
+		cmd.cmds[subcmd.name] = subcmd
+	}
 }
 
 // 创建并返回一个子command，handler里options为解析后的参数(-开头)
