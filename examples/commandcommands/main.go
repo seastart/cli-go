@@ -14,6 +14,11 @@ func main() {
 		Dft:  0,
 		Desc: "begin no",
 	})
+	testCmd.SetPreRun(func(cmd *cli.Command, remaincmds []string) (err error) {
+		start := cmd.OptVal("start")
+		fmt.Printf("into test command prerun start=%v\n", start)
+		return
+	})
 	subCmd := testCmd.AddCommandN("live", "test subcommand", func(cmd *cli.Command, remaincmds []string) (err error) {
 		id := cmd.OptVal("id")
 		fmt.Printf("into live subcommand run id=%v\n", id)

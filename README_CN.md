@@ -3,7 +3,7 @@
 ```
 go get github.com/seastart/cli-go
 ```
-致敬 [cobra](https://cobra.dev/)  
+致敬 [cobra](https://cobra.dev/) [urfave cli](https://cli.urfave.org/)  
 
 ## 概念
 ```

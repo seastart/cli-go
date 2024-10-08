@@ -224,6 +224,13 @@ func (cmd *Command) run(args ...string) (err error) {
 	if err != nil {
 		return
 	}
+	// 先执行自身pre
+	if cmd.pre != nil {
+		err = cmd.pre(cmd, cmd.fs.Args())
+		if err != nil {
+			return
+		}
+	}
 	// 有子cmd并且存在，遍历执行；否则执行自身
 	if len(cmd.fs.Args()) > 0 {
 		subcmdname := cmd.fs.Args()[0]
@@ -233,13 +240,6 @@ func (cmd *Command) run(args ...string) (err error) {
 			return cmd.run(subargs...)
 		} else {
 			// cmd.app.Warningf("%s不存在子命令%s", cmd.name, subcmdname)
-		}
-	}
-	// pre
-	if cmd.pre != nil {
-		err = cmd.pre(cmd, cmd.fs.Args())
-		if err != nil {
-			return
 		}
 	}
 	// 执行自身

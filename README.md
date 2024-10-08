@@ -4,7 +4,7 @@ a simple library to build golang command line (cli / cmd)apps
 ```
 go get github.com/seastart/cli-go
 ```
-respect [cobra](https://cobra.dev/)  
+respect [cobra](https://cobra.dev/) [urfave cli](https://cli.urfave.org/)  
 
 ## concepts
 ```
