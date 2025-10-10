@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -45,14 +46,42 @@ type Command struct {
 // option
 type Option struct {
 	Name string      // 参数名
-	Dft  interface{} // 参数默认值
+	Dft  interface{} // 参数默认值，需通过默认值来指定参数类型
 	Desc string      // 参数说明
 	val  interface{} // 参数解析出的值
 }
 
-// 获取解析出的值
-func (opt *Option) GetVal() reflect.Value {
-	return reflect.ValueOf(opt.val).Elem()
+type Val struct {
+	val interface{} // 参数解析出的值
+}
+
+func (v Val) String() string {
+	if v.val == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%v", reflect.ValueOf(v.val).Elem())
+}
+
+func (v Val) Int() int {
+	if v.val == nil {
+		return 0
+	}
+	return *(v.val.(*int))
+}
+
+func (v Val) Bool() bool {
+	if v.val == nil {
+		return false
+	}
+	return *(v.val.(*bool))
+}
+
+func (v Val) Duration() time.Duration {
+	if v.val == nil {
+		return 0
+	}
+	return *(v.val.(*time.Duration))
 }
 
 // 实例化一个描述为desc，根参数为opts的cli app
@@ -117,6 +146,9 @@ func NewCommand(name string, desc string, handler Handler, opts ...*Option) *Com
 	options := map[string]*Option{}
 	for _, opt := range opts {
 		options[opt.Name] = opt
+		if opt.Dft == nil {
+			opt.Dft = ""
+		}
 		opt.val = opt.Dft
 		switch val := opt.val.(type) {
 		case bool:
@@ -128,8 +160,11 @@ func NewCommand(name string, desc string, handler Handler, opts ...*Option) *Com
 		case string:
 			opt.val = &val
 			fs.StringVar(&val, opt.Name, val, opt.Desc)
+		case time.Duration:
+			opt.val = &val
+			fs.DurationVar(&val, opt.Name, val, opt.Desc)
 		default:
-			panic("目前仅支持bool int string三种option类型")
+			panic("目前仅支持bool int string time.Duration四种option类型")
 		}
 	}
 	subcmd := &Command{
@@ -202,16 +237,22 @@ func (cmd *Command) App() *CliApp {
 	return cmd.app
 }
 
+// 是否有option
+func (cmd *Command) HasOpt(name string) bool {
+	_, ok := cmd.options[name]
+	return ok
+}
+
 // 获取option值
-func (cmd *Command) OptVal(name string) (val reflect.Value) {
+func (cmd *Command) OptVal(name string) (val Val) {
 	val, _ = cmd.OptValE(name)
 	return
 }
 
 // 获取option值
-func (cmd *Command) OptValE(name string) (val reflect.Value, err error) {
+func (cmd *Command) OptValE(name string) (val Val, err error) {
 	if opt, ok := cmd.options[name]; ok {
-		return opt.GetVal(), nil
+		return Val{val: opt.val}, nil
 	} else {
 		err = fmt.Errorf("%s不存在参数%s", cmd.name, name)
 	}
