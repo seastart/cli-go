@@ -237,19 +237,13 @@ func (cmd *Command) App() *CliApp {
 	return cmd.app
 }
 
-// 是否有option
-func (cmd *Command) HasOpt(name string) bool {
-	_, ok := cmd.options[name]
-	return ok
-}
-
-// 获取option值
+// 获取option值，未指定则为默认值
 func (cmd *Command) OptVal(name string) (val Val) {
 	val, _ = cmd.OptValE(name)
 	return
 }
 
-// 获取option值
+// 获取option值，未指定则为默认值，没有此option则返回错误
 func (cmd *Command) OptValE(name string) (val Val, err error) {
 	if opt, ok := cmd.options[name]; ok {
 		return Val{val: opt.val}, nil
