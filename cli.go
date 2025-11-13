@@ -258,8 +258,7 @@ func (cmd *Command) run(args ...string) (err error) {
 	err = cmd.fs.Parse(args)
 	if err != nil {
 		if err == flag.ErrHelp {
-			cmd.ShowHelp()
-			return
+			return nil
 		}
 		return
 	}
