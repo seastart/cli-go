@@ -89,7 +89,7 @@ func NewCliApp(desc string, opts ...*Option) *CliApp {
 	return NewCliWholeApp(desc, nil, opts...)
 }
 
-// 实例化一个描述为desc，根参数为opts，且没有子命令的cli app
+// 实例化一个描述为desc，根参数为opts，默认执行handler的cli app
 func NewCliWholeApp(desc string, handler Handler, opts ...*Option) *CliApp {
 	app := &CliApp{
 		Command: NewCommand("", desc, handler, opts...),
