@@ -70,6 +70,13 @@ func (v Val) Int() int {
 	return *(v.val.(*int))
 }
 
+func (v Val) Float64() float64 {
+	if v.val == nil {
+		return 0
+	}
+	return *(v.val.(*float64))
+}
+
 func (v Val) Bool() bool {
 	if v.val == nil {
 		return false
@@ -157,6 +164,9 @@ func NewCommand(name string, desc string, handler Handler, opts ...*Option) *Com
 		case int:
 			opt.val = &val
 			fs.IntVar(&val, opt.Name, val, opt.Desc)
+		case float64:
+			opt.val = &val
+			fs.Float64Var(&val, opt.Name, val, opt.Desc)
 		case string:
 			opt.val = &val
 			fs.StringVar(&val, opt.Name, val, opt.Desc)
